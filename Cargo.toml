@@ -7,3 +7,10 @@ edition = "2021"
 
 [dependencies]
 png = { version = "0.17.10" }
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "fat"
+strip = "symbols"
+panic = "abort"

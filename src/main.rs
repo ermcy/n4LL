@@ -55,14 +55,28 @@ fn main() {
             }
         };
 
-        let mut file_map = [[0usize; 256]; 256];
+        let mut file_map = vec![vec![0f32; 256]; 256];
         for byte in file_buffer.windows(2) {
             let x = byte[0] as usize;
             let y = byte[1] as usize;
-
-            file_map[y][x] = 0xFFFFFFFF;
+            file_map[y][x] += 1f32;
         }
-
+        let mut max = 0f32;
+        for y in 0..256 {
+            for x in 0..256 {
+                let mut f = 0f32;
+                if file_map[y][x] > 0f32 { f = f32::ln(file_map[y][x]); }
+                if f > max { max = f }
+            }
+        }
+        let mut pixels = vec![vec![0usize; 256]; 256];
+        for y in 0..256 {
+            for x in 0..256 {
+                let t = f32::ln(file_map[y][x] / max);
+                let b = (t * 255f32) as usize;
+                pixels[y][x] = 0xFF000000 | b | (b << 8) | (b << 16);
+            }
+        }
         let output_file_path = format!("{file_path}.{}.png", PROGRAM_NAME);
         let mut output_file = match File::create(&output_file_path) {
             Ok(of) => { of }
@@ -72,7 +86,7 @@ fn main() {
                 continue;
             }
         };
-        let data: Vec<_> = file_map.iter().flat_map(|row| row.iter()).map(|x| *x as u8).collect();
+        let data: Vec<_> = pixels.iter().flat_map(|row| row.iter()).map(|x| *x as u8).collect();
         let encoder = png::Encoder::new(&mut output_file, 256, 256);
         let mut writer = match encoder.write_header() {
             Ok(ok) => { ok }
@@ -92,4 +106,3 @@ fn main() {
         };
     }
 }
-
